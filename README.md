@@ -18,7 +18,9 @@ cd /home/jinyu/realman_jinyu/realman_jinyu/joycon_zjy/aloha_sim_env/
 in record_hdf5_same_len.py, you can change the default len in "ap.add_argument("--frames", type=int, default=300, help="每次按B录制的帧数上限（默认300）")"
 #### 2.2 change the sim Env 
 in record_hdf5_same_len.py, you can change the default sim Env in ap.add_argument("--env-name", type=str, default="put-cube-v1") like ap.add_argument("--env-name", type=str, default="hook-package-v1") 
-record_hdf5_same_len.py
+
+python record_hdf5_same_len.py
 ### 3. save episodes as lerobot dataset
 this one is under development
+
 python /home/jinyu/realman_jinyu/realman_jinyu/joycon_zjy/aloha_sim_env/collect_sim_cv2.py
