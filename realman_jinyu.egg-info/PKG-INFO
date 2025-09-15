@@ -1,0 +1,126 @@
+Metadata-Version: 2.4
+Name: realman_jinyu
+Version: 0.0.1
+Summary: Your MuJoCo gym envs
+Requires-Python: >=3.10
+Requires-Dist: numpy==2.2.6
+Requires-Dist: scipy==1.15.3
+Requires-Dist: gymnasium==0.29.1
+Requires-Dist: dm-control==1.0.31
+Requires-Dist: dm-tree==0.1.9
+Requires-Dist: etils==1.13.0
+Requires-Dist: mujoco==3.3.5
+Requires-Dist: glfw==2.9.0
+Requires-Dist: PyOpenGL==3.1.10
+Requires-Dist: opencv-python==4.12.0.88
+Requires-Dist: imageio==2.37.0
+Requires-Dist: pillow==11.3.0
+Requires-Dist: pygame==2.6.1
+Requires-Dist: protobuf==6.32.0
+Requires-Dist: absl-py==2.3.1
+Requires-Dist: cloudpickle==3.1.1
+Requires-Dist: tqdm==4.67.1
+Requires-Dist: requests==2.32.5
+Requires-Dist: attrs==25.3.0
+Requires-Dist: importlib_resources==6.5.2
+Requires-Dist: lxml==6.0.1
+Requires-Dist: numba==0.61.2
+Requires-Dist: llvmlite==0.44.0
+Requires-Dist: Farama-Notifications==0.0.4
+Provides-Extra: ros
+Requires-Dist: actionlib==1.14.3; extra == "ros"
+Requires-Dist: angles==1.9.14; extra == "ros"
+Requires-Dist: bondpy==1.8.7; extra == "ros"
+Requires-Dist: camera-calibration==1.17.0; extra == "ros"
+Requires-Dist: camera-calibration-parsers==1.12.1; extra == "ros"
+Requires-Dist: catkin==0.8.12; extra == "ros"
+Requires-Dist: controller-manager==0.20.0; extra == "ros"
+Requires-Dist: controller-manager-msgs==0.20.0; extra == "ros"
+Requires-Dist: cv-bridge==1.16.2; extra == "ros"
+Requires-Dist: defusedxml==0.7.1; extra == "ros"
+Requires-Dist: diagnostic-analysis==1.12.1; extra == "ros"
+Requires-Dist: diagnostic-common-diagnostics==1.12.1; extra == "ros"
+Requires-Dist: diagnostic-updater==1.12.1; extra == "ros"
+Requires-Dist: gazebo_plugins==2.9.3; extra == "ros"
+Requires-Dist: gazebo_ros==2.9.3; extra == "ros"
+Requires-Dist: gencpp==0.7.2; extra == "ros"
+Requires-Dist: geneus==3.0.0; extra == "ros"
+Requires-Dist: genlisp==0.4.18; extra == "ros"
+Requires-Dist: genmsg==0.6.1; extra == "ros"
+Requires-Dist: gennodejs==2.0.2; extra == "ros"
+Requires-Dist: genpy==0.6.18; extra == "ros"
+Requires-Dist: image-geometry==1.16.2; extra == "ros"
+Requires-Dist: interactive-markers==1.12.2; extra == "ros"
+Requires-Dist: laser-geometry==1.6.8; extra == "ros"
+Requires-Dist: message-filters==1.17.4; extra == "ros"
+Requires-Dist: python-qt-binding==0.4.6; extra == "ros"
+Requires-Dist: qt-dotgraph==0.4.5; extra == "ros"
+Requires-Dist: qt-gui==0.4.5; extra == "ros"
+Requires-Dist: qt-gui-cpp==0.4.5; extra == "ros"
+Requires-Dist: qt-gui-py-common==0.4.5; extra == "ros"
+Requires-Dist: resource-retriever==1.12.10; extra == "ros"
+Requires-Dist: rosbag==1.17.4; extra == "ros"
+Requires-Dist: rosboost-cfg==1.15.10; extra == "ros"
+Requires-Dist: rosclean==1.15.10; extra == "ros"
+Requires-Dist: roscreate==1.15.10; extra == "ros"
+Requires-Dist: rosgraph==1.17.4; extra == "ros"
+Requires-Dist: roslaunch==1.17.4; extra == "ros"
+Requires-Dist: roslib==1.15.10; extra == "ros"
+Requires-Dist: roslint==0.12.0; extra == "ros"
+Requires-Dist: roslz4==1.17.4; extra == "ros"
+Requires-Dist: rosmake==1.15.10; extra == "ros"
+Requires-Dist: rosmaster==1.17.4; extra == "ros"
+Requires-Dist: rosmsg==1.17.4; extra == "ros"
+Requires-Dist: rosnode==1.17.4; extra == "ros"
+Requires-Dist: rosparam==1.17.4; extra == "ros"
+Requires-Dist: rospy==1.17.4; extra == "ros"
+Requires-Dist: rosservice==1.17.4; extra == "ros"
+Requires-Dist: rostest==1.17.4; extra == "ros"
+Requires-Dist: rostopic==1.17.4; extra == "ros"
+Requires-Dist: rosunit==1.15.10; extra == "ros"
+Requires-Dist: roswtf==1.17.4; extra == "ros"
+Requires-Dist: rqt-action==0.4.11; extra == "ros"
+Requires-Dist: rqt-bag==0.5.3; extra == "ros"
+Requires-Dist: rqt-bag-plugins==0.5.3; extra == "ros"
+Requires-Dist: rqt-console==0.4.14; extra == "ros"
+Requires-Dist: rqt-dep==0.4.14; extra == "ros"
+Requires-Dist: rqt-graph==0.4.16; extra == "ros"
+Requires-Dist: rqt-gui==0.5.5; extra == "ros"
+Requires-Dist: rqt-gui-py==0.5.5; extra == "ros"
+Requires-Dist: rqt-image-view==0.4.19; extra == "ros"
+Requires-Dist: rqt-launch==0.4.10; extra == "ros"
+Requires-Dist: rqt-logger-level==0.4.13; extra == "ros"
+Requires-Dist: rqt-moveit==0.5.13; extra == "ros"
+Requires-Dist: rqt-msg==0.4.12; extra == "ros"
+Requires-Dist: rqt-nav-view==0.5.8; extra == "ros"
+Requires-Dist: rqt-plot==0.4.16; extra == "ros"
+Requires-Dist: rqt-pose-view==0.5.13; extra == "ros"
+Requires-Dist: rqt-publisher==0.4.12; extra == "ros"
+Requires-Dist: rqt-py-common==0.5.5; extra == "ros"
+Requires-Dist: rqt-py-console==0.4.12; extra == "ros"
+Requires-Dist: rqt-reconfigure==0.5.7; extra == "ros"
+Requires-Dist: rqt-robot-dashboard==0.5.8; extra == "ros"
+Requires-Dist: rqt-robot-monitor==0.5.15; extra == "ros"
+Requires-Dist: rqt-robot-steering==0.5.14; extra == "ros"
+Requires-Dist: rqt-runtime-monitor==0.5.10; extra == "ros"
+Requires-Dist: rqt-rviz==0.7.2; extra == "ros"
+Requires-Dist: rqt-service-caller==0.4.12; extra == "ros"
+Requires-Dist: rqt-shell==0.4.13; extra == "ros"
+Requires-Dist: rqt-srv==0.4.11; extra == "ros"
+Requires-Dist: rqt-tf-tree==0.6.5; extra == "ros"
+Requires-Dist: rqt-top==0.4.11; extra == "ros"
+Requires-Dist: rqt-topic==0.4.15; extra == "ros"
+Requires-Dist: rqt-web==0.4.11; extra == "ros"
+Requires-Dist: rviz==1.14.26; extra == "ros"
+Requires-Dist: sensor-msgs==1.13.2; extra == "ros"
+Requires-Dist: smach==2.5.3; extra == "ros"
+Requires-Dist: smach-ros==2.5.3; extra == "ros"
+Requires-Dist: smclib==1.8.7; extra == "ros"
+Requires-Dist: tf==1.13.4; extra == "ros"
+Requires-Dist: tf-conversions==1.13.4; extra == "ros"
+Requires-Dist: tf2-geometry-msgs==0.7.10; extra == "ros"
+Requires-Dist: tf2-kdl==0.7.10; extra == "ros"
+Requires-Dist: tf2-py==0.7.10; extra == "ros"
+Requires-Dist: tf2-ros==0.7.10; extra == "ros"
+Requires-Dist: topic-tools==1.17.4; extra == "ros"
+Requires-Dist: xacro==1.14.20; extra == "ros"

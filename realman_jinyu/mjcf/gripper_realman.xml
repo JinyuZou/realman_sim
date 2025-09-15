@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mujoco model="RMG24_description">
+  <compiler angle="radian"/>
+  <asset>
+    <mesh name="base_link" content_type="model/stl" file="/home/jinyu/Downloads/RMG24_description/meshes/base_link.STL"/>
+    <mesh name="Link_finger1" content_type="model/stl" file="/home/jinyu/Downloads/RMG24_description/meshes/Link_finger1.STL"/>
+    <mesh name="Link_finger2" content_type="model/stl" file="/home/jinyu/Downloads/RMG24_description/meshes/Link_finger2.STL"/>
+  </asset>
+  <worldbody>
+    <body name="base_link">
+      <inertial pos="4.891e-05 -5.4407e-05 0.04689" quat="-0.000127152 0.705039 0.0100547 0.709097" mass="0.17393" diaginertia="0.000124734 0.000116149 6.65918e-05"/>
+      <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="base_link"/>
+      <body name="Link_finger1" pos="0 0 0.0891">
+        <inertial pos="-0.0083779 -0.0014014 0.016575" quat="0.995128 0.0165404 0.0949976 0.0205634" mass="0.019443" diaginertia="4.19131e-06 3.86477e-06 1.60152e-06"/>
+        <joint name="Joint_finger1" pos="0 0 0" axis="-1 0 0" type="slide" range="0 0.0325" actuatorfrcrange="-10 10"/>
+        <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="Link_finger1"/>
+      </body>
+      <body name="Link_finger2" pos="0 0 0.0891">
+        <inertial pos="0.0083779 0.001392 0.016575" quat="0.995128 -0.0165404 -0.0949976 0.0205634" mass="0.019443" diaginertia="4.19131e-06 3.86477e-06 1.60152e-06"/>
+        <joint name="Joint_finger2" pos="0 0 0" axis="1 0 0" type="slide" range="0 0.0325" actuatorfrcrange="-10 10"/>
+        <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="Link_finger2"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

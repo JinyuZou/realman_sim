@@ -1,0 +1,92 @@
+<mujoco model="aloha_scene">
+  <!-- 角度单位是弧度；如果想用度数，把 angle 改成 "degree" 并把相机 fovy 写成 58 -->
+  <compiler angle="radian"/>
+
+  <!-- 可选：相机自带手电筒，方便看清 -->
+  <!-- <visual>
+    <headlight ambient="0.25 0.25 0.25" diffuse="0.7 0.7 0.7" specular="0.2 0.2 0.2"/>
+  </visual> -->
+
+  <!-- 你的双臂机器人 -->
+  <include file="realman_65_two_arms_gripper.xml"/>
+
+  <asset>
+    <texture name="table" type="2d" file="desk2.png"/>
+    <texture name="table2" type="2d" file="desktop.png"/>
+    <material name="table_mat" texture="table" rgba="0.4 0.3 0.2 1"/>
+
+    <!-- 蓝布材质：不反光，微弱自发光避免太暗 -->
+    <material name="blue_cloth" rgba="0.12 0.30 0.85 1"
+              specular="0" shininess="0" reflectance="0" emission="0.05"/>
+    <!-- <material name="blue_cloth" rgba="1 0 0 1"
+              specular="0" shininess="0" reflectance="0" emission="0.06"/> -->
+  </asset>
+
+  <worldbody>
+    <!-- 提亮后的平行光 -->
+    <light name="light" pos="0 1 1.28" dir="0 0 -1" directional="true"
+           diffuse="1 1 1" specular="0.6 0.6 0.6" ambient="0.35 0.35 0.35"/>
+
+    <!-- 桌面：顶面位于 z=0 -->
+    <body name="table" pos="0 0 0">
+      <inertial pos="0 0 0" mass="1000" diaginertia="1 1 1"/>
+      <geom type="box" size="0.8 0.6 0.02"
+            material="table_mat" pos="0 0 -0.02"
+            condim="3" friction="1 0.005 0.0001"
+            solimp="0.98 0.98 0.001" solref="0.002 2000" margin="0"/>
+    </body>
+
+    <!-- 四面蓝布墙 + 蓝色天花板（视觉背景：不参与碰撞） -->
+    <!-- 房间半长/半宽：1.20 / 1.01；高度 H=1.6；墙厚/顶厚 t=0.01 -->
+    <!-- <body name="blue_room" pos="0 0 0"> -->
+      <!-- +X 墙 -->
+      <body>
+            <geom type="box" name="wall_x_plus" material="blue_cloth"
+                  pos="0.8 0 0.0" size="0.01 1.2 1.3"
+                  contype="0" conaffinity="0" />
+            <!-- -X 墙 -->
+      </body>
+      <body>
+            <geom type="box" name="wall_x_minus" material="blue_cloth"
+                  pos="-0.8 0 0.0" size="0.01 1.2 1.3"
+                  contype="0" conaffinity="0" />
+            <!-- +Y 墙 -->
+      </body>
+      <body>
+            <geom type="box" name="wall_y_plus" material="blue_cloth"
+                  pos="0.0 0.6 0" size="0.8 0.01 1.3"
+                  contype="0" conaffinity="0" />
+                  <!-- -Y 墙 -->
+      </body>
+      <!-- <body>
+      
+            <geom type="box" name="wall_y_minus" material="blue_cloth"
+                  pos="0 -1.01 0" size="0.8 0.01 1.3"
+                  contype="0" conaffinity="0" />
+      </body> -->
+      <body>
+            <!-- 天花板 z = 1.6，厚 0.01 -->
+            <geom type="box" name="ceiling" material="blue_cloth"
+                  pos="0 0 1.3" size="0.7 0.6 0.01"
+                  contype="0" conaffinity="0" />
+      </body>
+      
+      <!-- 可选：若想要蓝色地面，解注释下面这块（注意别挡住桌面视觉）
+      <geom type="box" name="floor_blue" material="blue_cloth"
+            pos="0 0 -0.01" size="1.21 1.01 0.01"
+            contype="0" conaffinity="0" group="3"/>
+      -->
+    <!-- </body> -->
+
+    <!-- 相机（注意 fovy 为弧度，因为 angle=radian） -->
+    <camera name="top_cam"
+            pos="0 -0.6 1.2"
+            quat="0.976332 0.216277 0 0"
+            fovy="58"/>  <!-- ≈ 58° -->
+
+    <camera name="button_cam"
+            pos="0 -0.6 0.0316055"
+            quat="0.672659 0.739953 0 0"
+            fovy="58"/>  <!-- ≈ 58° -->
+  </worldbody>
+</mujoco>

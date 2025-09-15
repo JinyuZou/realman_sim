@@ -1,0 +1,77 @@
+<mujoco>
+ <default>
+        <!-- 通用旋转关节 -->
+        <joint damping="2.0" armature="0.02"/>
+
+        <default class="joint1_d">
+            <position kp="500" kv="28"
+                    ctrllimited="true"
+                    forcelimited="true"
+                    forcerange="-100 100"/>
+        </default>
+        <default class="joint2_d">
+            <position kp="210" kv="10"
+                    ctrllimited="true"
+                    forcelimited="true"
+                    forcerange="-100 100"/>
+        </default>
+        <default class="joint3_d">
+            <position kp="50" 
+                    ctrllimited="true"
+                    forcelimited="true"
+                    forcerange="-100 100"/>
+        </default>
+        <default class="joint4_d">
+            <position kp="50" kv="0.5"
+                    ctrllimited="true"
+                    forcelimited="true"
+                    forcerange="-100 100"/>
+        </default>
+        <default class="joint5_d">
+            <position kp="35" kv="0.2"
+                    ctrllimited="true"
+                    forcelimited="true"
+                    forcerange="-100 100"/>
+        </default>
+         <default class="waist_d">
+            <position kp="2" kv="0.01"
+                    ctrllimited="true"
+                    forcelimited="true"
+                    forcerange="-100 100"/>
+        </default>  
+   
+    <default class="gripper">
+      <position kp="15000" kv="676" ctrllimited="true" forcelimited="true" forcerange="-1000 1000"/>
+    </default>
+  </default>
+
+
+  <equality>
+    <joint joint1="Joint_finger1_left" joint2="Joint_finger2_left" polycoef="0 1 0 0 0"/>
+    <joint joint1="Joint_finger1_right" joint2="Joint_finger2_right" polycoef="0 1 0 0 0"/>
+  </equality>
+
+  
+  <actuator>
+    <!-- 右臂 -->
+    <position class="joint1_d" name="joint1_right_act" joint="joint1_right" ctrlrange="-3.107 3.107"/>
+    <position class="joint2_d" name="joint2_right_act" joint="joint2_right" ctrlrange="-2.269 2.269"/>
+    <position class="joint3_d" name="joint3_right_act" joint="joint3_right" ctrlrange="-2.356 2.356"/>
+    <position class="joint4_d" name="joint4_right_act" joint="joint4_right" ctrlrange="-3.107 3.107"/>
+    <position class="joint5_d" name="joint5_right_act" joint="joint5_right" ctrlrange="-2.234 2.234"/>
+    <position class="waist_d"  name="joint6_right_act" joint="joint6_right" ctrlrange="-6.283 6.283"/>
+    <!-- 右爪 -->
+    <position name="act_grip_right" joint="Joint_finger1_right" class="gripper"  ctrllimited="true" ctrlrange="-0.002 0.1"/>
+
+    <!-- 左臂 -->
+    <position class="joint1_d" name="joint1_left_act" joint="joint1_left" ctrlrange="-3.107 3.107"/>
+    <position class="joint2_d" name="joint2_left_act" joint="joint2_left" ctrlrange="-2.269 2.269"/>
+    <position class="joint3_d" name="joint3_left_act" joint="joint3_left" ctrlrange="-2.356 2.356"/>
+    <position class="joint4_d" name="joint4_left_act" joint="joint4_left" ctrlrange="-3.107 3.107"/>
+    <position class="joint5_d" name="joint5_left_act" joint="joint5_left" ctrlrange="-2.234 2.234"/>
+    <position class="waist_d"  name="joint6_left_act" joint="joint6_left" ctrlrange="-6.283 6.283"/>
+    <!-- 左爪 -->
+    <position name="act_grip_left" joint="Joint_finger1_left" class="gripper"  ctrllimited="true" ctrlrange="-0.002 0.1"/>
+
+  </actuator>
+</mujoco>

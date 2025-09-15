@@ -1,0 +1,34 @@
+{
+  "env_name": "realman-aloha-v1",
+  "fps": 8,
+  "cameras": {
+    "top_cam": [
+      480,
+      640
+    ],
+    "button_cam": [
+      480,
+      640
+    ],
+    "wrist_cam_left": [
+      480,
+      640
+    ],
+    "wrist_cam_right": [
+      480,
+      640
+    ]
+  },
+  "schema": {
+    "agent_pos": "float32 [T, state_dim]",
+    "action": "float32 [T, 14]  (L6,Lg,R6,Rg)",
+    "left_pose": "float32 [T, 4,4]",
+    "right_pose": "float32 [T, 4,4]",
+    "left_gripper": "float32 [T]",
+    "right_gripper": "float32 [T]",
+    "timestamp_s": "float64 [T]",
+    "frames": "PNG images per step: *_ZL.png, *_ZR.png, *_WL.png, *_WR.png"
+  },
+  "episode": "episode_0000",
+  "steps": 0
+}

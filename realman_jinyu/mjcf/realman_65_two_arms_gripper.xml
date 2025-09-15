@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mujoco model="rm_65_b_description">
+  <compiler angle="radian" meshdir="meshes"/>
+
+  <!-- 更稳的数值设置 + 多重CCD + 近裁剪更小 -->
+  <option timestep="0.002" solver="Newton" iterations="50" tolerance="1e-10"
+          noslip_iterations="3" cone="elliptic" impratio="100">
+    <flag multiccd="enable"/>
+  </option>
+
+  <visual>
+    <map znear="0.001" zfar="10"/>
+  </visual>
+
+  <!-- 全局默认：显示几何 vs 碰撞几何 -->
+  <default>
+    <default class="visual">
+      <geom type="mesh" mass="0" group="2" contype="0" conaffinity="0" rgba="0.92 0.89 0.84 1"/>
+    </default>
+
+    
+    
+    <!-- 推荐在 default 里给碰撞几何一个统一的 class -->
+    <default class="collision">
+      <geom type="mesh"
+            group="3"
+            contype="1" conaffinity="1"   
+            condim="4"                    
+            friction="6.0 0.14 0.01"     
+            solimp="0.95 0.99 0.0005"    
+            solref="0.002 1"/>            
+    </default>
+
+    <default class="sphere_collision">
+      <geom type="sphere" size="0.0012" rgba="1 0 0 1"/>
+    </default>
+  </default>
+
+  <asset>
+    <mesh name="base_link" content_type="model/stl" file="base_link.STL"/>
+    <mesh name="link1"     content_type="model/stl" file="link1.STL"/>
+    <mesh name="link2"     content_type="model/stl" file="link2.STL"/>
+    <mesh name="link3"     content_type="model/stl" file="link3.STL"/>
+    <mesh name="link4"     content_type="model/stl" file="link4.STL"/>
+    <mesh name="link5"     content_type="model/stl" file="link5.STL"/>
+    <mesh name="link6"     content_type="model/stl" file="link6.STL"/>
+
+    <mesh name="base_link_gripper" content_type="model/stl" file="base_link_gripper.STL"/>
+    <mesh name="Link_finger1"      content_type="model/stl" file="Link_finger1.STL"/>
+    <mesh name="Link_finger2"      content_type="model/stl" file="Link_finger2.STL"/>
+  </asset>
+
+  <worldbody>
+    <light name="sun" pos="0 0 1.1" dir="0 0 -1" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3" ambient="0.2 0.2 0.2" directional="true"/>
+
+    <!-- ===================== 右臂 ===================== -->
+    <body name="robot_arm_right" pos="0.6 0 0">
+      <inertial pos="-0.000433277 -3.54664e-05 0.0599428" quat="0.997516 0.00259716 0.0221813 0.0668003" mass="0.841071" diaginertia="0.00172808 0.00170955 0.000902378"/>
+      <geom class="visual"   mesh="base_link"/>
+      <geom class="collision" mesh="base_link"/>
+
+      <body name="Link1_right" pos="0 0 0.2405">
+        <inertial pos="1.22263e-08 0.021108 -0.0251854" quat="0.988851 -0.148906 -2.80074e-05 -0.000243475" mass="0.593563" diaginertia="0.00126614 0.00124677 0.000496264"/>
+        <joint name="joint1_right" pos="0 0 0" axis="0 0 1" range="-3.1 3.1" actuatorfrcrange="-60 60"/>
+        <geom class="visual"   mesh="link1"/>
+        <geom class="collision" mesh="link1"/>
+
+        <body name="Link2_right" quat="0.499998 0.5 -0.5 0.500002">
+          <inertial pos="0.152256 4.75384e-07 -0.0062026" quat="1.2834e-05 0.785787 1.90512e-05 0.618497" mass="0.864175" diaginertia="0.00735632 0.00733754 0.000513875"/>
+          <joint name="joint2_right" pos="0 0 0" axis="0 0 1" range="-2.268 2.268" actuatorfrcrange="-60 60"/>
+          <geom class="visual"   mesh="link2"/>
+          <geom class="collision" mesh="link2"/>
+
+          <body name="Link3_right" pos="0.256 0 0" quat="0.707105 0 0 0.707108">
+            <inertial pos="5.05313e-06 -0.0595926 0.0105691" quat="0.424678 0.56496 -0.565554 0.424992" mass="0.289634" diaginertia="0.00065604 0.000637371 0.000114622"/>
+            <joint name="joint3_right" pos="0 0 0" axis="0 0 1" range="-2.355 2.355" actuatorfrcrange="-30 30"/>
+            <geom class="visual"   mesh="link3"/>
+            <geom class="collision" mesh="link3"/>
+
+            <body name="Link4_right" pos="0 -0.21 0" quat="0.707105 0.707108 0 0">
+              <inertial pos="1.15517e-06 -0.0180424 -0.0215395" quat="0.990405 0.138195 -7.01319e-06 0.000110532" mass="0.23942" diaginertia="0.000285939 0.000275318 0.000107298"/>
+              <joint name="joint4_right" pos="0 0 0" axis="0 0 1" range="-3.1 3.1" actuatorfrcrange="-10 10"/>
+              <geom class="visual"   mesh="link4"/>
+              <geom class="collision" mesh="link4"/>
+
+              <body name="Link5_right" quat="0.707105 -0.707108 0 0">
+                <inertial pos="3.19795e-06 -0.0593808 0.00736804" quat="0.419765 0.568659 -0.5692 0.420041" mass="0.2188" diaginertia="0.000358615 0.00035054 8.07958e-05"/>
+                <joint name="joint5_right" pos="0 0 0" axis="0 0 1" range="-2.233 2.233" actuatorfrcrange="-10 10"/>
+                <geom class="visual"   mesh="link5"/>
+                <geom class="collision" mesh="link5"/>
+
+                <body name="Link6_right" pos="0 -0.144 0" quat="0.707105 0.707108 0 0">
+                  <inertial pos="0.000714235 -0.000396719 -0.0126724" quat="0.613063 0.350717 -0.614301 0.351831" mass="0.0649018" diaginertia="3.17886e-05 2.10548e-05 1.80205e-05"/>
+                  <joint name="joint6_right" pos="0 0 0" axis="0 0 1" range="-6.28 6.28" actuatorfrcrange="-10 10"/>
+                  <geom class="visual"   mesh="link6"/>
+                  <geom class="collision" mesh="link6"/>
+
+                  <camera name="wrist_cam_right" pos="0 -0.060 0.1" euler="1.8 0 -0.0873" fovy="70"/>
+                  <site name="wrist_cam_right_frame" pos="0 -0.060 0.1" euler="1.5708 0 -0.0873" type="sphere" size="0.01" rgba="1 0 0 0"/>
+
+                  <body name="base_link_gripper_right">
+                    <inertial pos="4.891e-05 -5.4407e-05 0.04689" quat="-0.000127152 0.705039 0.0100547 0.709097" mass="0.17393" diaginertia="0.000124734 0.000116149 6.65918e-05"/>
+                    <geom class="visual"   mesh="base_link_gripper"/>
+                    <geom class="collision" mesh="base_link_gripper"/>
+
+                    <!-- finger1_right：mesh 只可视化；box 指垫参与碰撞（放在 -X 指尖） -->
+                    <body name="Link_finger1_right" pos="0 0 0.0891">
+                      <inertial pos="-0.0083779 -0.0014014 0.016575" quat="0.995128 0.0165404 0.0949976 0.0205634" mass="0.17393" diaginertia="4.19131e-06 3.86477e-06 1.60152e-06"/>
+                      <joint name="Joint_finger1_right" pos="0 0 0" axis="-1 0 0" damping="20" type="slide" range="0 0.0325" actuatorfrcrange="-50 50"/>
+                      <geom class="visual" mesh="Link_finger1"/>
+                      <geom class="collision" mesh="Link_finger1" contype="1" conaffinity="1" condim="3"  friction="2.0 0.02 0.002"  solref="0.0008 1"  solimp="0.97 0.999 0.0003"  margin="0.0015"/>
+                     
+                    </body>
+
+                    <!-- finger2_right：mesh 只可视化；box 指垫参与碰撞（放在 +X 指尖） -->
+                    <body name="Link_finger2_right" pos="0 0 0.0891">
+                      <inertial pos="0.0083779 0.0014014 0.016575" quat="0.995128 -0.0165404 -0.0949976 0.0205634" mass="0.17393" diaginertia="4.19131e-06 3.86477e-06 1.60152e-06"/>
+                      <joint name="Joint_finger2_right" pos="0 0 0" axis="1 0 0" damping="20" type="slide" range="0 0.0325" actuatorfrcrange="-50 50"/>
+                      <geom class="visual" mesh="Link_finger2"/>
+                      <geom class="collision" mesh="Link_finger2" contype="1" conaffinity="1" condim="3"  friction="2.0 0.02 0.002"  solref="0.0008 1"  solimp="0.97 0.999 0.0003"  margin="0.0015"/>
+                      
+                    </body>
+
+                    <site name="gripper_tip_right" pos="0 0 0.1216" size="0.003" rgba="0 0 1 0" type="sphere"/>
+                  </body> <!-- base_link_gripper_right -->
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+    <!-- ===================== 左臂 ===================== -->
+    <body name="robot_arm_left" pos="-0.6 0 0" quat="0 0 0 1">
+      <inertial pos="-0.000433277 -3.54664e-05 0.0599428" quat="0.997516 0.00259716 0.0221813 0.0668003" mass="0.841071" diaginertia="0.00172808 0.00170955 0.000902378"/>
+      <geom class="visual"   mesh="base_link"/>
+      <geom class="collision" mesh="base_link"/>
+
+      <body name="Link1_left" pos="0 0 0.2405">
+        <inertial pos="1.22263e-08 0.021108 -0.0251854" quat="0.988851 -0.148906 -2.80074e-05 -0.000243475" mass="0.593563" diaginertia="0.00126614 0.00124677 0.000496264"/>
+        <joint name="joint1_left" pos="0 0 0" axis="0 0 1" range="-3.1 3.1" actuatorfrcrange="-60 60"/>
+        <geom class="visual"   mesh="link1"/>
+        <geom class="collision" mesh="link1"/>
+
+        <body name="Link2_left" quat="0.499998 0.5 -0.5 0.500002">
+          <inertial pos="0.152256 4.75384e-07 -0.0062026" quat="1.2834e-05 0.785787 1.90512e-05 0.618497" mass="0.864175" diaginertia="0.00735632 0.00733754 0.000513875"/>
+          <joint name="joint2_left" pos="0 0 0" axis="0 0 1" range="-2.268 2.268" actuatorfrcrange="-60 60"/>
+          <geom class="visual"   mesh="link2"/>
+          <geom class="collision" mesh="link2"/>
+
+          <body name="Link3_left" pos="0.256 0 0" quat="0.707105 0 0 0.707108">
+            <inertial pos="5.05313e-06 -0.0595926 0.0105691" quat="0.424678 0.56496 -0.565554 0.424992" mass="0.289634" diaginertia="0.00065604 0.000637371 0.000114622"/>
+            <joint name="joint3_left" pos="0 0 0" axis="0 0 1" range="-2.355 2.355" actuatorfrcrange="-30 30"/>
+            <geom class="visual"   mesh="link3"/>
+            <geom class="collision" mesh="link3"/>
+
+            <body name="Link4_left" pos="0 -0.21 0" quat="0.707105 0.707108 0 0">
+              <inertial pos="1.15517e-06 -0.0180424 -0.0215395" quat="0.990405 0.138195 -7.01319e-06 0.000110532" mass="0.23942" diaginertia="0.000285939 0.000275318 0.000107298"/>
+              <joint name="joint4_left" pos="0 0 0" axis="0 0 1" range="-3.1 3.1" actuatorfrcrange="-10 10"/>
+              <geom class="visual"   mesh="link4"/>
+              <geom class="collision" mesh="link4"/>
+
+              <body name="Link5_left" quat="0.707105 -0.707108 0 0">
+                <inertial pos="3.19795e-06 -0.0593808 0.00736804" quat="0.419765 0.568659 -0.5692 0.420041" mass="0.2188" diaginertia="0.000358615 0.00035054 8.07958e-05"/>
+                <joint name="joint5_left" pos="0 0 0" axis="0 0 1" range="-2.233 2.233" actuatorfrcrange="-10 10"/>
+                <geom class="visual"   mesh="link5"/>
+                <geom class="collision" mesh="link5"/>
+
+                <body name="Link6_left" pos="0 -0.144 0" quat="0.707105 0.707108 0 0">
+                  <inertial pos="0.000714235 -0.000396719 -0.0126724" quat="0.613063 0.350717 -0.614301 0.351831" mass="0.0649018" diaginertia="3.17886e-05 2.10548e-05 1.80205e-05"/>
+                  <joint name="joint6_left" pos="0 0 0" axis="0 0 1" range="-6.28 6.28" actuatorfrcrange="-10 10"/>
+                  <geom class="visual"   mesh="link6"/>
+                  <geom class="collision" mesh="link6"/>
+
+                  <camera name="wrist_cam_left" pos="0 -0.060 0.1" euler="1.8 0 -0.0873" fovy="70"/>
+
+                  <body name="base_link_gripper_left">
+                    <inertial pos="4.891e-05 -5.4407e-05 0.04689" quat="-0.000127152 0.705039 0.0100547 0.709097" mass="0.17393" diaginertia="0.000124734 0.000116149 6.65918e-05"/>
+                    <geom class="visual"   mesh="base_link_gripper"/>
+                    <geom class="collision" mesh="base_link_gripper"/>
+
+                    <!-- finger1_left：mesh 只可视化；box 指垫（-X 指尖） -->
+                    <body name="Link_finger1_left" pos="0 0 0.0891">
+                      <inertial pos="-0.0083779 -0.0014014 0.016575" quat="0.995128 0.0165404 0.0949976 0.0205634" mass="0.17393" diaginertia="4.19131e-06 3.86477e-06 1.60152e-06"/>
+                      <joint name="Joint_finger1_left" pos="0 0 0" axis="-1 0 0" damping="20" type="slide" range="0 0.0325" actuatorfrcrange="-50 50"/>
+                      <geom class="visual" mesh="Link_finger1"/>
+                      <geom class="collision" mesh="Link_finger1"/>
+                      <!-- <geom name="finger1_left_pad" class="collision" type="box"
+                            pos="-0.011 0 0.020" size="0.012 0.013 0.0304"
+                            rgba="1 0 0 1" friction="6.0 0.14 0.02" group="3"/> -->
+                    </body>
+
+                    <!-- finger2_left：mesh 只可视化；box 指垫（+X 指尖） -->
+                    <body name="Link_finger2_left" pos="0 0 0.0891">
+                      <inertial pos="0.0083779 0.0014014 0.016575" quat="0.995128 -0.0165404 -0.0949976 0.0205634" mass="0.17393" diaginertia="4.19131e-06 3.86477e-06 1.60152e-06"/>
+                      <joint name="Joint_finger2_left" pos="0 0 0" axis="1 0 0" damping="20" type="slide" range="0 0.0325" actuatorfrcrange="-50 50"/>
+                      <geom class="visual" mesh="Link_finger2"/>
+                      <geom class="collision" mesh="Link_finger2"/>
+                      <!-- <geom name="finger2_left_pad" class="collision" type="box"
+                            pos="0.011 0 0.020" size="0.012 0.013 0.0304"
+                            rgba="1 0 0 1" friction="6.0 0.14 0.02" group="3"/> -->
+                    </body>
+                  </body>
+
+                  <site name="gripper_tip_left" pos="0 0 0.1216" size="0.003" rgba="0 0 1 0" type="sphere"/>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+  </worldbody>
+
+  <!-- 相邻体自碰撞排除（指尖之间不排除，要能夹紧） -->
+  <contact>
+    <!-- 右臂链 -->
+    <exclude body1="robot_arm_right" body2="Link1_right"/>
+    <exclude body1="Link1_right" body2="Link2_right"/>
+    <exclude body1="Link2_right" body2="Link3_right"/>
+    <exclude body1="Link3_right" body2="Link4_right"/>
+    <exclude body1="Link4_right" body2="Link5_right"/>
+    <exclude body1="Link5_right" body2="Link6_right"/>
+    <exclude body1="Link6_right" body2="base_link_gripper_right"/>
+    <exclude body1="base_link_gripper_right" body2="Link_finger1_right"/>
+    <exclude body1="base_link_gripper_right" body2="Link_finger2_right"/>
+
+    <!-- 左臂链 -->
+    <exclude body1="robot_arm_left" body2="Link1_left"/>
+    <exclude body1="Link1_left" body2="Link2_left"/>
+    <exclude body1="Link2_left" body2="Link3_left"/>
+    <exclude body1="Link3_left" body2="Link4_left"/>
+    <exclude body1="Link4_left" body2="Link5_left"/>
+    <exclude body1="Link5_left" body2="Link6_left"/>
+    <exclude body1="Link6_left" body2="base_link_gripper_left"/>
+    <exclude body1="base_link_gripper_left" body2="Link_finger1_left"/>
+    <exclude body1="base_link_gripper_left" body2="Link_finger2_left"/>
+  </contact>
+
+  <!-- 手指联动（可选） -->
+  <!-- <equality>
+    <joint joint1="Joint_finger1_left"  joint2="Joint_finger2_left"  polycoef="0 1 0 0 0"/>
+    <joint joint1="Joint_finger1_right" joint2="Joint_finger2_right" polycoef="0 1 0 0 0"/>
+  </equality> -->
+
+  <!-- 你的执行器配置 -->
+  <include file="actuator_two_arms_gripper.xml"/>
+
+  <!-- 备注：
+       1) 如果仍有“慢慢滑落”，可把 pad 的 friction 提到 7.0 0.2 0.03，或在 actuator xml 里增大 forcerange/gear。
+       2) 如果某处看起来被“斜切”，一般是相机 near，还可再减，或把腕相机后退几厘米。
+       3) 如果某个 link 仍互穿，通常是该段 visual/collision 漏配对或初始就交叠。 -->
+</mujoco>

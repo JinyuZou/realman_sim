@@ -1,0 +1,29 @@
+<mujoco>
+    <include file="scene_realman.xml"/>
+
+    <worldbody>
+
+        <body name="wall" pos="0 0 0">
+            <inertial pos="0 0 0" mass="1000" diaginertia="1 1 1"/>
+            <geom type="box" size="0.7 0.01 0.7"  pos="0 0.35 0.6" condim="3" friction="1 0.005 0.0001" solimp="0.98 0.98 0.001" solref="0.002 2000"  margin="0" rgba="0 0 0 1" />
+          
+            
+        </body>
+        <body name="hook" pos="0 0 0">
+            <geom type="cylinder" size="0.009"  fromto="0 0.35 0.2   0 0.25 0.225" condim="3" friction="1 0.005 0.0001" solimp="0.98 0.98 0.001" solref="0.002 2000"  margin="0" rgba="0.106 0.529 0.451 1" />
+            <joint name="hook_joint" type="free"  damping="1e9" armature="0.001"/>
+            <geom  pos="0 0 0" size="0.007"  fromto="0 0.35 0.2   0 0.25 0.225" type="cylinder" name="pin-hook" rgba="0 1 0 1" gap="100" group="3"/>
+        </body>
+        <body name="package-v1" pos="0 0 0">
+            <joint name="package_joint" type="free"/>
+            <geom type="box" size="0.03 0.015 0.025"  pos="0 0 0.03" condim="3" friction="0.5"  solref="0.01 1" rgba="0.875 0.274 0.751 1" /> 
+            <geom type="box" size="0.005 0.005 0.015" pos="-0.015 0 0.07" condim="3" friction="0.5"  solref="0.01 1" rgba="0.875 0.274 0.751 1" /> 
+            <geom type="box" size="0.005 0.005 0.015" pos="0.015 0 0.07"  condim="3" friction="0.5"  solref="0.01 1" rgba="0.875 0.274 0.751 1" /> 
+            <geom type="box" size="0.018 0.005 0.005" pos="0 0 0.085" condim="3" friction="0.5"  solref="0.01 1" rgba="0.875 0.274 0.751 1" /> 
+            <geom type="box" size="0.01 0.004 0.01"   pos="0 0 0.07"  name="pin-package" rgba="0 1 0 1" gap="100" group="3" mass="0" />
+        </body>
+
+    </worldbody>
+
+
+</mujoco>
