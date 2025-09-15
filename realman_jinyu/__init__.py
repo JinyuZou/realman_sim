@@ -1,9 +1,6 @@
-# 注册一定要放在包的 __init__.py 里，这样 import mujoco_learning 就会执行
 from gymnasium.envs.registration import register
 
 print("[realman_jinyu] __init__ executed from:", __file__)  # 诊断用
-
-# 有命名空间版本（你要用 `mujoco_learning/xxx` 这种 id 时，必须先声明命名空间）
 
 
 register(
