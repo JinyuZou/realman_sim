@@ -1,6 +1,8 @@
 # To install realman_jinyu
 cd realman_jinyu
 
+conda create --name realman python=3.10
+
 conda activate realman
 
 pip install -e .
