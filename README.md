@@ -1,5 +1,5 @@
 # To install realman_jinyu
-cd realman_jinyu
+cd realman_sim
 
 conda create --name realman python=3.10
 
