@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, io, json, time, math, argparse
+import os, time, argparse
 from pathlib import Path
 import numpy as np
-import imageio.v3 as iio
 import cv2
+import torch
 
-import gymnasium as gym
-import realman_jinyu
+import gymnasium as gym  # noqa: F401
+import realman_jinyu     # noqa: F401
 
 from xbox_controller import DualJoyConController
 from TeleopEnv2arms import TeleopEnv2Arms
 
-# ---------------- 基本配置 ----------------
+# Try both LeRobot import paths
+try:
+    from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+except Exception:
+    from lerobot.datasets.lerobot_dataset import LeRobotDataset
+
+# ---------------- Basic config ----------------
 FPS = 8
 CAMERAS = {
     "top_cam":         [480, 640],
@@ -21,21 +27,21 @@ CAMERAS = {
     "wrist_cam_left":  [480, 640],
     "wrist_cam_right": [480, 640],
 }
-B_INDEX = 1  # 手柄B键
-
-# 固定初始位姿（留空则用当前位姿）
+B_INDEX = 1         # B button
+DEBOUNCE_S = 0.30   # seconds
 INITIAL_FIXED = None
-POS_TOL_M = 1e-2         # 位置容差 1 cm
-ROT_TOL_DEG = 5.0        # 角度容差 5 度
-MAX_RETURN_SECS = 2.0    # 回位最多 2s
-# -----------------------------------------------------------
+POS_TOL_M = 1e-2
+ROT_TOL_DEG = 5.0
+MAX_RETURN_SECS = 2.0
 
+# -----------------------------------------------------------
 def _pose_from_pos_quat(pos_xyz, quat_wxyz):
+    """wxyz -> 3x3 R, build 4x4 T"""
     qw, qx, qy, qz = quat_wxyz
     R = np.array([
-        [1-2*(qy*qy+qz*qz),   2*(qx*qy - qz*qw), 2*(qx*qz + qy*qw)],
-        [2*(qx*qy + qz*qw),   1-2*(qx*qx+qz*qz), 2*(qy*qz - qx*qw)],
-        [2*(qx*qz - qy*qw),   2*(qy*qz + qx*qw), 1-2*(qx*qx+qy*qy)]
+        [1-2*(qy*qy+qz*qz), 2*(qx*qy - qz*qw), 2*(qx*qz + qy*qw)],
+        [2*(qx*qy + qz*qw), 1-2*(qx*qx+qz*qz), 2*(qy*qz - qx*qw)],
+        [2*(qx*qz - qy*qw), 2*(qy*qz + qx*qw), 1-2*(qx*qx+qy*qy)],
     ], dtype=float)
     T = np.eye(4, dtype=float)
     T[:3, :3] = R
@@ -55,27 +61,8 @@ def _pose_reached(curr_T, target_T, pos_tol=POS_TOL_M, rot_tol_deg=ROT_TOL_DEG):
     theta = np.degrees(np.arccos(cos_theta))
     return (dp <= pos_tol) and (theta <= rot_tol_deg)
 
-def next_episode_dir(root: Path) -> Path:
-    root.mkdir(parents=True, exist_ok=True)
-    idx = 0
-    while True:
-        ep = root / f"episode_{idx:04d}"
-        if not ep.exists():
-            (ep / "frames").mkdir(parents=True, exist_ok=True)
-            return ep
-        idx += 1
-
-def save_meta(ep_dir: Path, meta: dict):
-    with open(ep_dir / "meta.json", "w") as f:
-        json.dump(meta, f, indent=2)
-
-def save_npz(ep_dir: Path, arrays: dict):
-    pack = {k: np.asarray(v) for k, v in arrays.items()}
-    np.savez_compressed(ep_dir / "data.npz", **pack)
-
-# ---------------- MuJoCo viewer 支持 ----------------
+# ---------------- Viewer helpers ----------------
 def _mj_model_data_from_env(env):
-    """尽量通用地从 TeleopEnv2Arms -> RealmanEnv 里拿到 mjModel/mjData 指针。"""
     physics = None
     for cand in [getattr(env, "env", None),
                  getattr(getattr(env, "env", None), "env", None),
@@ -86,30 +73,29 @@ def _mj_model_data_from_env(env):
         if physics is not None:
             break
     if physics is None:
-        return None, None
+        return None, None, None
     model = getattr(getattr(physics, "model", None), "ptr", None) \
          or getattr(getattr(physics, "model", None), "_model", None)
     data  = getattr(getattr(physics, "data",  None), "ptr", None) \
          or getattr(getattr(physics, "data",  None), "_data",  None)
-    return model, data
+    return physics, model, data
 
 def _open_viewer(env):
     try:
-        import mujoco
         import mujoco.viewer as mjv
     except Exception as e:
-        print(f"[Viewer] 载入 mujoco.viewer 失败：{e}")
+        print(f"[Viewer] Failed to import mujoco.viewer: {e}")
         return None, None
-    model, data = _mj_model_data_from_env(env)
+    _, model, data = _mj_model_data_from_env(env)
     if model is None or data is None:
-        print("[Viewer] 没找到 mjModel/mjData；无法打开原生窗口。")
+        print("[Viewer] No mjModel/mjData handle found; cannot open native viewer.")
         return None, None
     try:
         viewer = mjv.launch_passive(model, data)
-        print("[Viewer] 原生窗口已启动（被动模式）。")
+        print("[Viewer] Native viewer launched (passive mode).")
         return viewer, mjv
     except Exception as e:
-        print(f"[Viewer] 启动失败：{e}")
+        print(f"[Viewer] Failed to launch native viewer: {e}")
         return None, None
 
 def _close_viewer(viewer):
@@ -119,7 +105,7 @@ def _close_viewer(viewer):
     except Exception:
         pass
 
-# ---------------- 环境 / 控制器 管理 ----------------
+# ---------------- Env / Controller ----------------
 def _create_env(args):
     env = TeleopEnv2Arms(env_name=args.env_name, fps=args.fps, cameras=CAMERAS)
     obs, info = env.reset(seed=42, options={"randomize_light": False})
@@ -135,36 +121,107 @@ def _destroy_env(env):
         pass
 
 def _rebuild_everything(args, *, need_viewer):
-    """
-    彻底重建：env + controller（必要）+ viewer（可选）
-    返回: env, controller, viewer, mjv, obs
-    """
     env, obs, _ = _create_env(args)
-    controller = DualJoyConController(env)  # 必须基于新 env 绑定
+    controller = DualJoyConController(env)
     viewer = mjv = None
     if need_viewer:
         viewer, mjv = _open_viewer(env)
     return env, controller, viewer, mjv, obs
 
+# ---------------- LeRobot helpers ----------------
+def _probe_shapes_for_features(env):
+    """Step once with hold pose to read pixel shapes and dims."""
+    left_pose, right_pose = _pose_from_env(env)
+    obs, _, _, _, step_info = env.step(
+        left_pose=left_pose, left_gripper=1.0,
+        right_pose=right_pose, right_gripper=1.0
+    )
+    pixels = obs.get("pixels", {}) if isinstance(obs, dict) else {}
+    cam_shapes = {k: v.shape for k, v in pixels.items() if v is not None}  # HWC
+    agent_pos = obs.get("agent_pos", None)
+    state_dim = int(agent_pos.shape[0]) if agent_pos is not None else 0
+    action_dim = int(step_info["action"].shape[0])
+    pose_dim = int(step_info["left_arm_pose"].size)  # 4x4 -> 16
+    print("[Probe]", cam_shapes, state_dim, action_dim, pose_dim)
+    return cam_shapes, state_dim, action_dim, pose_dim
+
+def _build_features(cam_shapes, state_dim, action_dim, pose_dim):
+    """Include 'task' as int32 (1,) to avoid string-mapping issues."""
+    features = {}
+    for cam, shape in cam_shapes.items():
+        H, W, C = shape
+        features[f"observation.images.{cam}"] = {
+            "dtype": "video",
+            "shape": (H, W, C),
+            "names": ["height", "width", "channel"],
+        }
+    if state_dim > 0:
+        features["observation.state"] = {"dtype": "float32", "shape": (state_dim,), "names": None}
+    features["action"]         = {"dtype": "float32", "shape": (action_dim,), "names": None}
+    features["left_arm_pose"]  = {"dtype": "float32", "shape": (pose_dim,),  "names": None}
+    features["right_arm_pose"] = {"dtype": "float32", "shape": (pose_dim,),  "names": None}
+    features["left_gripper"]   = {"dtype": "float32", "shape": (1,),         "names": None}
+    features["right_gripper"]  = {"dtype": "float32", "shape": (1,),         "names": None}
+    # <<< key change: int32 with shape (1,) >>>
+    #features["task"]           = {"dtype": "int32",   "shape": (1,),         "names": None}
+    return features
+
+def wait_for_cameras_ready(env, video_keys, video_shapes, timeout_s=2.0, fps=FPS):
+    """Warm-up cameras so first frames are valid."""
+    hold_L, hold_R = _pose_from_env(env)
+    t0 = time.time()
+    period = 1.0 / max(1e-6, float(fps))
+    while True:
+        loop_t0 = time.time()
+        obs, _, _, _, _ = env.step(
+            left_pose=hold_L,  left_gripper=1.0,
+            right_pose=hold_R, right_gripper=1.0
+        )
+        pix = obs.get("pixels", {}) if isinstance(obs, dict) else {}
+        ok = True
+        for vkey in video_keys:
+            cam = vkey.split("observation.images.", 1)[1]
+            H, W, C = video_shapes[vkey]
+            img = pix.get(cam, None)
+            if img is None or img.shape != (H, W, C) or img.dtype != np.uint8:
+                ok = False
+                break
+        if ok or (time.time() - t0) > timeout_s:
+            return
+        sleep_t = period - (time.time() - loop_t0)
+        if sleep_t > 0:
+            time.sleep(sleep_t)
+
 # -----------------------------------------------------------
 def main():
-    ap = argparse.ArgumentParser(description="Teleop recorder with env reinit before each episode.")
+    os.environ.setdefault("TMPDIR", str(Path("./data/lerobot_tmp").resolve()))
+    Path(os.environ["TMPDIR"]).mkdir(parents=True, exist_ok=True)
+
+    ap = argparse.ArgumentParser(description="Teleop recorder → LeRobotDataset (+ optional HF push)")
     ap.add_argument("--env-name", type=str, default="hook-package-v1")
     ap.add_argument("--fps", type=float, default=FPS)
-    ap.add_argument("--out", type=str, default="outputs/joycon_dataset")
-    ap.add_argument("--task", type=str, default="task1")
-    ap.add_argument("--viewer", action="store_true", help="打开 MuJoCo 原生渲染窗口（mujoco.viewer）")
+    ap.add_argument("--viewer", action="store_true", help="Open the native MuJoCo viewer (mujoco.viewer)")
+    ap.add_argument("--repo-id", type=str, default="Jinyu220/realman_teleop_dataset")
+    ap.add_argument("--root", type=str, default="~/datasets/lerobot")
+    ap.add_argument("--task", type=str, default="2", help="Task label (integer is recommended)")
+    ap.add_argument("--push", dest="push", action="store_true", help="Push to the HuggingFace Hub after recording (requires login)")
+    ap.add_argument("--no-push", dest="push", action="store_false")
+    ap.set_defaults(push=True) 
     args = ap.parse_args()
+    args.root = str(Path(args.root).expanduser().resolve())
 
-    # OpenCV 预览窗口
+    # OpenCV preview window
     win_name = "Teleop Recorder (4 cams)"
-    cv2.namedWindow(win_name, cv2.WINDOW_AUTOSIZE)
+    GUI_OK = True
+    try:
+        cv2.namedWindow(win_name, cv2.WINDOW_AUTOSIZE)
+    except cv2.error as e:
+        print("[Preview] OpenCV HighGUI not available; headless mode:", e)
+        GUI_OK = False
 
-    # —— 首次创建（仅用于空闲浏览），真正开始录制前会重建一次 ——
-    env, joy, viewer, mjv, obs = None, None, None, None, None
+    # First build (probe)
     env, joy, viewer, mjv, obs = _rebuild_everything(args, need_viewer=args.viewer)
 
-    # 初始位姿（固定 or 当前）
     def get_initial_poses(current_env):
         if INITIAL_FIXED is not None:
             initial_L = _pose_from_pos_quat(INITIAL_FIXED["left"]["pos"],
@@ -175,94 +232,90 @@ def main():
             initial_L, initial_R = _pose_from_env(current_env)
         return initial_L, initial_R
 
-    # 保存路径与提示
-    root = Path(os.path.join(args.out, args.task))
-    print(f"[Recorder] 数据将保存到: {root.resolve()}")
-    print("操作：按 B 开始 → （重建环境）对齐初始位姿 → 自动开始录制；再按 B 结束并保存；窗口按 q 退出。")
+    print(f"[Recorder] Will save as LeRobot dataset to: {args.root} / {args.repo_id}")
 
+    # Probe → build features (explicitly include int32 task)
+    cam_shapes, state_dim, action_dim, pose_dim = _probe_shapes_for_features(env)
+    features_suggested = _build_features(cam_shapes, state_dim, action_dim, pose_dim)
+    # 强制把 task 纳入 schema：int32、shape=(1,)
+    
+
+    dataset = LeRobotDataset.create(
+        repo_id=args.repo_id,
+        root=str(Path(args.root) / args.repo_id),
+        fps=int(round(args.fps)),
+        
+        features=features_suggested,
+        image_writer_threads=8,
+        image_writer_processes=4,
+    )
+
+    # Effective schema (may reuse existing)
+    ds_features = dataset.features
+    print("[LeRobot] Features in use (effective):")
+    for k, v in ds_features.items():
+        print("  -", k, v["dtype"], v["shape"])
+
+    # If an older dataset directory forces `task` to string, ask user to clean/restart
+    if "task" in ds_features and ds_features["task"]["dtype"].lower() in ("string", "str", "utf8"):
+        print("[LeRobot] ERROR: existing dataset schema defines task as string; "
+              "please remove the old dataset directory or change --repo-id / --root to a new path.")
+        raise SystemExit(2)
+
+    video_keys = [k for k, spec in ds_features.items() if spec["dtype"] == "video"]
+    video_shapes = {k: tuple(ds_features[k]["shape"]) for k in video_keys}
+    print("[LeRobot] Video keys:", video_keys)
+
+    # ---- Control state ----
     recording = False
     returning = False
     return_start_t = 0.0
     prev_B = False
-
-    frames_ts, frames_action = [], []
-    frames_left_pose, frames_right_pose = [], []
-    frames_left_grip, frames_right_grip = [], []
-    frames_agent_pos = []
+    last_toggle_t = 0.0
     step_idx = 0
-
-    meta_base = {
-        "env_name": args.env_name,
-        "fps": args.fps,
-        "cameras": CAMERAS,
-        "schema": {
-            "agent_pos": "float32 [T, state_dim]",
-            "action": "float32 [T, 14]  (L6,Lg,R6,Rg)",
-            "left_pose":  "float32 [T, 4,4]",
-            "right_pose": "float32 [T, 4,4]",
-            "left_gripper":  "float32 [T]",
-            "right_gripper": "float32 [T]",
-            "timestamp_s": "float64 [T]",
-            "frames": "PNG images per step: *_ZL.png, *_ZR.png, *_WL.png, *_WR.png",
-        }
-    }
+    episode_idx = 0
 
     try:
         while True:
             loop_t0 = time.time()
 
-            # 如果 viewer 打开但被用户关闭，就继续无窗口运行
             if viewer is not None and hasattr(viewer, "is_running") and not viewer.is_running():
-                print("[Viewer] 窗口已关闭，继续无窗口运行。")
+                print("[Viewer] Window closed; continuing in headless mode.")
                 viewer = None
                 mjv = None
 
-            # 读手柄
-            running_flag, left_pose, left_grip, right_pose, right_grip, _ = joy.poll()
+            _, left_pose, left_grip, right_pose, right_grip, _ = joy.poll()
 
-            # B 键：开始/结束
+            # Toggle by B with debounce
             btn_B = joy.joy.get_button(B_INDEX)
-            if btn_B and not prev_B:
+            now = time.time()
+            if btn_B and not prev_B and (now - last_toggle_t) > DEBOUNCE_S:
+                last_toggle_t = now
                 if recording:
-                    # ---- 结束并保存 ----
-                    save_npz(ep_dir, {
-                        "timestamp_s":  frames_ts,
-                        "action":       frames_action,
-                        "left_pose":    frames_left_pose,
-                        "right_pose":   frames_right_pose,
-                        "left_gripper": frames_left_grip,
-                        "right_gripper":frames_right_grip,
-                        "agent_pos":    frames_agent_pos,
-                    })
-                    meta = {**meta_base, "episode": ep_dir.name, "steps": len(frames_ts)}
-                    save_meta(ep_dir, meta)
-                    print(f"[Recorder] ■ 结束并保存 -> {ep_dir.name}，共 {len(frames_ts)} 帧")
+                    if step_idx > 0:
+                        dataset.save_episode()
+                        print(f"[Recorder] ■ Finished and saved Episode {episode_idx} ({step_idx} frames)")
+                    else:
+                        print("[Recorder] Episode has 0 frames; skipping save.")
                     recording = False
+                    episode_idx += 1
                 else:
-                    # ---- 准备开始：重建环境（满足“每次采集前都初始化环境”）----
-                    print("[Recorder] 正在重建环境以开始新一集采集……")
-                    # 关掉旧 viewer / env / 手柄
-                    _close_viewer(viewer)
-                    viewer = None; mjv = None
-                    try:
-                        joy.close()
-                    except Exception:
-                        pass
+                    print("[Recorder] Rebuilding environment to start a new episode...")
+                    _close_viewer(viewer); viewer = None; mjv = None
+                    try: joy.close()
+                    except Exception: pass
                     _destroy_env(env)
 
-                    # 重建 env + controller + viewer
                     env, joy, viewer, mjv, obs = _rebuild_everything(args, need_viewer=args.viewer)
 
-                    # 回到初始位姿阶段
                     returning = True
                     return_start_t = loop_t0
                     initial_L, initial_R = get_initial_poses(env)
-                    print("[Recorder] 环境已重建，开始对齐到初始位姿……")
-                prev_B = btn_B
-            else:
-                prev_B = btn_B
+                    print(f"[Recorder] Environment rebuilt; aligning to initial pose... (Episode {episode_idx})")
+                    step_idx = 0
+            prev_B = btn_B
 
-            # ============ 控制一步 ============
+            # Control one step
             if returning:
                 obs, _, _, _, step_info = env.step(
                     left_pose=initial_L, left_gripper=1.0,
@@ -271,91 +324,116 @@ def main():
                 l_now, r_now = step_info["left_arm_pose"], step_info["right_arm_pose"]
                 if (_pose_reached(l_now, initial_L) and _pose_reached(r_now, initial_R)) \
                    or ((time.time() - return_start_t) > MAX_RETURN_SECS):
-                    # 回位完成 → 手柄零飘对齐 → 开始录制
+                    # Recenter controller & warm up cameras
                     joy.recenter_to(initial_L, initial_R)
-                    returning = False
-                    ep_dir = next_episode_dir(root)
-                    print(f"[Recorder] ▶ 开始录制 -> {ep_dir.name}")
-                    frames_ts.clear(); frames_action.clear()
-                    frames_left_pose.clear(); frames_right_pose.clear()
-                    frames_left_grip.clear(); frames_right_grip.clear()
-                    frames_agent_pos.clear()
-                    step_idx = 0
-                    save_meta(ep_dir, {**meta_base, "episode": ep_dir.name, "steps": 0})
+                    wait_for_cameras_ready(env, video_keys, video_shapes, timeout_s=2.0, fps=args.fps)
                     recording = True
+                    step_idx = 0
+                    returning = False
+                    print(f"[Recorder] ▶ Start recording Episode {episode_idx}")
             else:
-                # 正常人工遥操作
                 obs, _, _, _, step_info = env.step(
                     left_pose=left_pose, left_gripper=left_grip,
                     right_pose=right_pose, right_gripper=right_grip
                 )
 
-            # ====== 原生 MuJoCo viewer 同步（如果打开了）======
-            if viewer is not None:
-                try:
-                    viewer.sync()
-                except Exception:
-                    pass
+            # Preview (4 cams)
+            if GUI_OK:
+                pix = obs.get("pixels", {}) if isinstance(obs, dict) else {}
+                keys = ["top_cam", "button_cam", "wrist_cam_left", "wrist_cam_right"]
+                imgs = [pix.get(k, None) for k in keys]
+                any_img = next((im for im in imgs if im is not None), None)
+                if any_img is not None:
+                    H, W, _ = any_img.shape
+                    black = np.zeros((H, W, 3), dtype=any_img.dtype)
+                    imgs = [im if im is not None else black for im in imgs]
+                    top = np.concatenate(imgs[:2], axis=1)
+                    bottom = np.concatenate(imgs[2:], axis=1)
+                    quad = np.concatenate([top, bottom], axis=0)
+                    cv2.imshow(win_name, quad[:, :, ::-1])  # RGB->BGR
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        print("[Recorder] Key 'q' pressed; exiting.")
+                        break
 
-            # ===== OpenCV 四画面预览 =====
-            pix = obs.get("pixels", {}) if isinstance(obs, dict) else {}
-            keys = ["top_cam", "button_cam", "wrist_cam_left", "wrist_cam_right"]
-            imgs = [pix.get(k, None) for k in keys]
-            any_img = next((im for im in imgs if im is not None), None)
-            if any_img is not None:
-                H, W, _ = any_img.shape
-                black = np.zeros((H, W, 3), dtype=any_img.dtype)
-                imgs = [im if im is not None else black for im in imgs]
-                top = np.concatenate(imgs[:2], axis=1)
-                bottom = np.concatenate(imgs[2:], axis=1)
-                quad = np.concatenate([top, bottom], axis=0)
-                cv2.imshow(win_name, quad[:, :, ::-1])  # RGB->BGR
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    print("[Recorder] q 被按下，退出。")
-                    break
-
-            # 录制
+            # Write one frame
             if recording:
-                zl = pix.get("top_cam", None)
-                zr = pix.get("button_cam", None)
-                wl = pix.get("wrist_cam_left", None)
-                wr = pix.get("wrist_cam_right", None)
-                frame_base = ep_dir / "frames" / f"{step_idx:06d}"
-                if zl is not None: iio.imwrite(str(frame_base)+"_ZL.png", zl)
-                if zr is not None: iio.imwrite(str(frame_base)+"_ZR.png", zr)
-                if wl is not None: iio.imwrite(str(frame_base)+"_WL.png", wl)
-                if wr is not None: iio.imwrite(str(frame_base)+"_WR.png", wr)
+                f = {}
 
-                frames_ts.append(time.time())
-                frames_action.append(step_info["action"].astype(np.float32))
-                frames_left_pose.append(step_info["left_arm_pose"].astype(np.float32))
-                frames_right_pose.append(step_info["right_arm_pose"].astype(np.float32))
-                frames_left_grip.append(float(step_info["left_gripper"]))
-                frames_right_grip.append(float(step_info["right_gripper"]))
-                agent_pos = obs.get("agent_pos", None) if isinstance(obs, dict) else None
-                frames_agent_pos.append(
-                    np.zeros((0,), dtype=np.float32) if agent_pos is None else agent_pos.astype(np.float32)
-                )
+                # Optional proprio
+                agent_pos = obs.get("agent_pos", None)
+                if "observation.state" in ds_features and agent_pos is not None:
+                    f["observation.state"] = torch.tensor(agent_pos.reshape(-1).astype(np.float32))
+
+                # Actions / poses / grippers
+                f["action"] = torch.tensor(step_info["action"].reshape(-1).astype(np.float32))
+                f["left_arm_pose"]  = torch.tensor(step_info["left_arm_pose"].reshape(-1).astype(np.float32))
+                f["right_arm_pose"] = torch.tensor(step_info["right_arm_pose"].reshape(-1).astype(np.float32))
+                f["left_gripper"]   = torch.tensor([float(step_info["left_gripper"])], dtype=torch.float32)
+                f["right_gripper"]  = torch.tensor([float(step_info["right_gripper"])], dtype=torch.float32)
+
+                # Images: enforce write with padding/resizing if needed
+                pix = obs.get("pixels", {}) if isinstance(obs, dict) else {}
+                for vkey in video_keys:
+                    cam = vkey.split("observation.images.", 1)[1]
+                    H, W, C = video_shapes[vkey]
+                    img = pix.get(cam, None)
+                    if img is None:
+                        img = np.zeros((H, W, C), dtype=np.uint8)
+                    else:
+                        if img.ndim == 2:
+                            img = np.stack([img]*3, axis=-1)
+                        if img.shape[:2] != (H, W):
+                            img = cv2.resize(img, (W, H), interpolation=cv2.INTER_AREA)
+                        if img.dtype != np.uint8:
+                            img = img.astype(np.uint8, copy=False)
+                    f[vkey] = torch.from_numpy(img.copy())
+
+                # <<< always write task as int32 length-1 >>>
+                try:
+                    v = int(args.task)
+                except Exception:
+                    v = 0
+                v = int(args.task)         # 比如命令行 --task 2
+                f["task"] = int(args.task) 
+               
+                dataset.add_frame(f)
                 step_idx += 1
 
-            # 控制频率
+            # FPS control
             elapsed = time.time() - loop_t0
             sleep_t = (1.0/args.fps) - elapsed
             if sleep_t > 0:
                 time.sleep(sleep_t)
 
     except KeyboardInterrupt:
-        print("\n[Recorder] 收到 Ctrl+C，安全退出。")
+        print("\n[Recorder] Ctrl+C received; exiting safely.")
     finally:
-        # 资源清理
         try:
-            if joy is not None:
-                joy.close()
+            if recording and step_idx > 0:
+                dataset.save_episode()
+                print(f"[Recorder] ■ Force-finished and saved Episode {episode_idx} ({step_idx} frames)")
+        except Exception as e:
+            print(f"[Recorder] Error while saving the last episode: {e}")
+
+        try:
+            joy.close()
         except Exception:
             pass
-        cv2.destroyAllWindows()
+        try:
+            if GUI_OK:
+                cv2.destroyAllWindows()
+        except Exception:
+            pass
         _close_viewer(viewer)
         _destroy_env(env)
+
+        if args.push:
+            print("pushing_zjy+++++++++++++++++++++++++++++++")
+            try:
+                dataset.push_to_hub(private=False)
+                print("[LeRobot] Pushed to HuggingFace Hub.")
+            except Exception as e:
+                print(f"[LeRobot] push_to_hub failed: {e}")
 
 if __name__ == "__main__":
     main()
