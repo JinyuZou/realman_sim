@@ -199,10 +199,10 @@ def _open_viewer(env):
         model = getattr(physics.model, "ptr", None) or getattr(physics.model, "_model", None)
         data  = getattr(physics.data,  "ptr", None) or getattr(physics.data,  "_data",  None)
         viewer = mjv.launch_passive(model, data)
-        print("[Viewer] 原生窗口已启动。")
+        print("[Viewer] Native viewer window launched.")
         return viewer, mjv
     except Exception as e:
-        print(f"[Viewer] 启动失败：{e}")
+        print(f"[Viewer] Launch failed: {e}")
         return None, None
 
 def _close_viewer(viewer):
@@ -223,11 +223,11 @@ def _rebuild_everything(args, *, need_viewer):
 # ---------- 主程序 ----------
 def main():
     ap = argparse.ArgumentParser(description="Teleop recorder -> HDF5 (fixed frames per episode)")
-    ap.add_argument("--env-name", type=str, default="put-cube-v1")
+    ap.add_argument("--env-name", type=str, default="hook-package-v1")
     ap.add_argument("--fps", type=float, default=FPS)
     ap.add_argument("--out", type=str, default="outputs/joycon_hdf5")
     ap.add_argument("--task", type=str, default="task1")
-    ap.addargument = ap.add_argument  
+    ap.addargument = ap.add_argument  # 小别名，防手误
     ap.add_argument("--frames", type=int, default=300, help="max frames to record per B-press (default 300)")
     ap.add_argument("--viewer", action="store_true")
     args = ap.parse_args()
@@ -350,7 +350,7 @@ def main():
                 quad = np.concatenate([top, bottom], axis=0)
                 cv2.imshow(win_name, quad[:, :, ::-1])
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    print("[Recorder] 按 q，退出。")
+                    print("[Recorder] Press Q to quit.")
                     break
 
             # ===== 写入 HDF5：定长 N 帧 =====
@@ -379,7 +379,7 @@ def main():
                 time.sleep(sleep_t)
 
     except KeyboardInterrupt:
-        print("\n[Recorder] Ctrl+C，退出。")
+        print("\n[Recorder] Ctrl+C to exit.")
     finally:
         try:
             if h5 is not None: h5.close()
