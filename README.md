@@ -23,6 +23,6 @@ in record_hdf5_same_len.py, you can change the default sim Env in ap.add_argumen
 
 python record_hdf5_same_len.py
 ### 3. save episodes as lerobot dataset
-this one is under development
+
 
 python /home/jinyu/realman_jinyu/realman_jinyu/joycon_zjy/aloha_sim_env/collect_sim_cv2.py
