@@ -227,8 +227,8 @@ def main():
     ap.add_argument("--fps", type=float, default=FPS)
     ap.add_argument("--out", type=str, default="outputs/joycon_hdf5")
     ap.add_argument("--task", type=str, default="task1")
-    ap.addargument = ap.add_argument  # 小别名，防手误
-    ap.add_argument("--frames", type=int, default=300, help="每次按B录制的帧数上限（默认300）")
+    ap.addargument = ap.add_argument  
+    ap.add_argument("--frames", type=int, default=300, help="max frames to record per B-press (default 300)")
     ap.add_argument("--viewer", action="store_true")
     args = ap.parse_args()
 
@@ -248,8 +248,8 @@ def main():
     root = Path(os.path.join(args.out, args.task))
     root.mkdir(parents=True, exist_ok=True)
 
-    print(f"[Recorder] 保存到: {root.resolve()}")
-    print(f"操作：按 B 开始录制，自动录 {args.frames} 帧后停止；再次按 B 可提前结束；窗口按 q 退出。")
+    print(f"[Recorder] Saving to: {root.resolve()}")
+    print(f"Controls: Press B to start recording; auto-stops after {args.frames} frames. Press B again to stop early; press Q to close the window.")
 
     recording = False
     returning = False
@@ -273,7 +273,7 @@ def main():
             loop_t0 = time.time()
 
             if viewer is not None and hasattr(viewer, "is_running") and not viewer.is_running():
-                print("[Viewer] 关闭，继续无窗口。")
+                print("[Viewer] Closed, continuing headless.")
                 viewer = None; mjv = None
 
             # 读手柄
@@ -286,11 +286,11 @@ def main():
                     # ---- 提前结束 ----
                     if h5 is not None:
                         h5.close(); h5 = None
-                    print(f"[Recorder] ■ 提前结束并保存，共 {step_idx} 帧")
+                    print(f"[Recorder] ■ Stopped early and saved, {step_idx} frames in total")
                     recording = False
                 else:
                     # ---- 重建环境并回到初始位姿，准备新一集 ----
-                    print("[Recorder] 重建环境以开始新一集……")
+                    print("[Recorder] Rebuilding environment to start a new episode...")
                     _close_viewer(viewer); viewer = None; mjv = None
                     try: joy.close()
                     except Exception: pass
@@ -301,7 +301,7 @@ def main():
                     returning = True
                     return_start_t = loop_t0
                     initial_L, initial_R = get_initial_poses(env)
-                    print("[Recorder] 环境已重建，回到初始位姿中……")
+                    print("[Recorder] Environment rebuilt, returning to initial pose...")
                 prev_B = btn_B
             else:
                 prev_B = btn_B
@@ -329,7 +329,7 @@ def main():
                     step_idx = 0
                     frames_target = int(max(1, args.frames))
                     recording = True
-                    print(f"[Recorder] ▶ 开始录制 -> {ep_path.name}，目标 {frames_target} 帧")
+                    print(f"[Recorder] ▶ Recording started -> {ep_path.name}, target {frames_target} frames")
             else:
                 obs, _, _, _, step_info = env.step(
                     left_pose=left_pose, left_gripper=left_grip,
@@ -369,7 +369,7 @@ def main():
 
                 if step_idx >= frames_target:
                     h5.close(); h5 = None
-                    print(f"[Recorder] ■ 达到目标帧数 {frames_target}，已自动结束并保存。")
+                    print(f"[Recorder] ■ Reached target frame count {frames_target}, auto-saved and stopped.")
                     recording = False
 
             # 控制频率
