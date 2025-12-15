@@ -32,7 +32,7 @@ python record_hdf5_same_len.py
 python /home/jinyu/realman_jinyu/realman_jinyu/joycon_zjy/aloha_sim_env/hdf5_to_lerobot3.py
 | Command |
 | ------- |
-| ```bash<br>python hdf5_to_lerobot3.py \<br>  --in-dir  /path/to/episode_*.hdf5 \<br>  --root    ~/datasets/lerobot \<br>  --repo-id <user>/<dataset><br>``` |
+| ```bash<br>python hdf5_to_lerobot3.py   --in-dir  /path/to/episode_*.hdf5   --root    ~/datasets/lerobot   --repo-id <user>/<dataset>``` |
 
 | Parameter | Description |
 |-----------|-------------|
