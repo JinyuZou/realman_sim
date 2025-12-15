@@ -22,7 +22,28 @@ in record_hdf5_same_len.py, you can change the default len in "ap.add_argument("
 in record_hdf5_same_len.py, you can change the default sim Env in ap.add_argument("--env-name", type=str, default="put-cube-v1") like ap.add_argument("--env-name", type=str, default="hook-package-v1") 
 
 python record_hdf5_same_len.py
-### 3. save episodes as lerobot dataset
 
 
-python /home/jinyu/realman_jinyu/realman_jinyu/joycon_zjy/aloha_sim_env/collect_sim_cv2.py
+
+
+
+
+### 3. Convert HDF5 → LeRobot v3.0 (File-based)
+python /home/jinyu/realman_jinyu/realman_jinyu/joycon_zjy/aloha_sim_env/hdf5_to_lerobot3.py
+| Command |
+| ------- |
+| ```bash<br>python hdf5_to_lerobot3.py \<br>  --in-dir  /path/to/episode_*.hdf5 \<br>  --root    ~/datasets/lerobot \<br>  --repo-id <user>/<dataset><br>``` |
+
+| Parameter | Description |
+|-----------|-------------|
+| `in-dir`  | Local folder containing `episode_0000.hdf5` … |
+| `root`    | LeRobot cache root; results are saved under `<root>/<repo-id>/` |
+| `repo-id` | Hugging Face repository name; ready for `push_to_hub` |
+
+| Output Structure (LeRobot v3.0 File-based) |
+|--------------------------------------------|
+| `data/chunk-000/file-000.parquet` &nbsp; multi-episode observations & actions<br>`videos/camera/chunk-000/file-000.mp4` &nbsp; consolidated video chunk<br>`meta/episodes/chunk-000/file-000.parquet` &nbsp; structured metadata |
+
+| Note |
+|------|
+| • The official online visualizer currently supports **v2.1 episode-based** only; specify `version="v2.1"` in the script for immediate web visualization.<br>• Run `dataset.push_to_hub()` after conversion to publish to Hugging Face Hub. |
