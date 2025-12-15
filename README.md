@@ -28,7 +28,7 @@ python record_hdf5_same_len.py
 
 
 
-### 3. Convert HDF5 → LeRobot v3.0 (File-based)
+### 3. Convert HDF5 → LeRobot v3.0 (File-based)(in my env)
 python /home/jinyu/realman_jinyu/realman_jinyu/joycon_zjy/aloha_sim_env/hdf5_to_lerobot3.py
 | Command |
 | ------- |
